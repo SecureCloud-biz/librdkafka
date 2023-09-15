@@ -873,6 +873,9 @@ void rd_kafka_msgq_insert_msgq(rd_kafka_msgq_t *destq,
  * @param incr_retry Increment retry count for messages.
  * @param max_retries Maximum retries allowed per message.
  * @param backoff Absolute retry backoff for retried messages.
+ * @param exponential_backoff If true the backoff should be exponential with 2**(retry_count)*retry_ms
+ * @param retry_ms The retry ms used for exponential backoff calculation
+ * @param retry_max_ms The max backoff limit for exponential backoff calculation
  *
  * @returns 0 if all messages were retried, or 1 if some messages
  *          could not be retried.

@@ -1,7 +1,7 @@
 /*
  * librdkafka - Apache Kafka C library
  *
- * Copyright (c) 2023-2024, Confluent
+ * Copyright (c) 2023, Confluent Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,7 +26,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 #include "../src/rdkafka_proto.h"
 #include "test.h"
 #include "../src/rdkafka_mock.h"
@@ -37,6 +36,12 @@
 const int32_t retry_ms = 100;
 const int32_t retry_max_ms = 1000; 
 
+/** Find Coordinator Test
+ * We fail the request with RD_KAFKA_RESP_ERR_GROUP_COORDINATOR_NOT_AVAILABLE so that
+ * the request is retried via the intervalled mechanism and it should be close to 1 or 2 seconds
+ * as the loop runs after every 1 second and sends the request which have been there for atleast 500 ms
+ * The exponential backoff does not apply in this case we just apply the jitter to the backoff of intervalled query
+*/
 void test_FindCoordinator(rd_kafka_mock_cluster_t *mcluster, const char *topic, rd_kafka_conf_t *conf){
         rd_kafka_mock_request_t **requests = NULL;
         size_t request_cnt = 0;
@@ -46,16 +51,10 @@ void test_FindCoordinator(rd_kafka_mock_cluster_t *mcluster, const char *topic, 
         const int32_t low = 1000;
         const int32_t high = 2000;
         int32_t buffer = 200; // 200 ms buffer added
-        rd_kafka_t *consumer, *producer;
-        rd_kafka_topic_t *rkt;
+        rd_kafka_t *consumer;
 
         SUB_TEST();
         test_conf_set(conf, "topic.metadata.refresh.interval.ms","-1");
-        rd_kafka_conf_set_dr_msg_cb(conf, test_dr_msg_cb);
-
-        producer = test_create_handle(RD_KAFKA_PRODUCER, rd_kafka_conf_dup(conf));
-        rkt = test_create_producer_topic(producer, topic, NULL);
-        
         test_conf_set(conf, "auto.offset.reset", "earliest");
         test_conf_set(conf, "enable.auto.commit", "false");
 
@@ -84,12 +83,14 @@ void test_FindCoordinator(rd_kafka_mock_cluster_t *mcluster, const char *topic, 
                 }
         }
         rd_kafka_destroy(consumer);
-        rd_kafka_topic_destroy(rkt);
-        rd_kafka_destroy(producer);
         rd_kafka_mock_clear_requests(mcluster);
         SUB_TEST_PASS();
 }
 
+/** OffsetCommit Test
+ * We fail the request with RD_KAFKA_RESP_ERR_COORDINATOR_LOAD_IN_PROGRESS so that
+ * the request is retried with the exponential backoff. The max retries allowed is 2.
+*/
 void test_OffsetCommit(rd_kafka_mock_cluster_t *mcluster,const char *topic, rd_kafka_conf_t *conf){
         rd_kafka_mock_request_t **requests = NULL;
         size_t request_cnt = 0;
@@ -142,6 +143,10 @@ void test_OffsetCommit(rd_kafka_mock_cluster_t *mcluster,const char *topic, rd_k
         SUB_TEST_PASS();
 }
 
+/** Produce Test
+ * We fail the request with RD_KAFKA_RESP_ERR_COORDINATOR_LOAD_IN_PROGRESS so that
+ * the request is retried with the exponential backoff. The exponential backoff is capped at retry_max_ms with jitter.
+*/
 void test_Produce(rd_kafka_mock_cluster_t *mcluster,const char *topic, rd_kafka_conf_t *conf){
         rd_kafka_mock_request_t **requests = NULL;
         size_t request_cnt = 0;
@@ -191,7 +196,10 @@ void test_Produce(rd_kafka_mock_cluster_t *mcluster,const char *topic, rd_kafka_
         rd_kafka_mock_clear_requests(mcluster);
         SUB_TEST_PASS();
 }
-
+/** Heartbeat-FindCoordinator Test
+ * We fail the request with RD_KAFKA_RESP_ERR_NOT_COORDINATOR_FOR_GROUP so that
+ * the FindCoordinator request is trigerred.
+*/
 void test_Heartbeat_FindCoordinator(rd_kafka_mock_cluster_t *mcluster,const char *topic, rd_kafka_conf_t *conf){
         rd_kafka_mock_request_t **requests = NULL;
         size_t request_cnt = 0;
@@ -236,6 +244,10 @@ void test_Heartbeat_FindCoordinator(rd_kafka_mock_cluster_t *mcluster,const char
         SUB_TEST_PASS();
 }
 
+/** Joingroup-FindCoordinator Test
+ * We fail the request with RD_KAFKA_RESP_ERR_NOT_COORDINATOR_FOR_GROUP so that
+ * the FindCoordinator request is trigerred.
+*/
 void test_JoinGroup_FindCoordinator(rd_kafka_mock_cluster_t *mcluster,const char *topic, rd_kafka_conf_t *conf){
         rd_kafka_mock_request_t **requests = NULL;
         size_t request_cnt = 0;
@@ -278,6 +290,10 @@ void test_JoinGroup_FindCoordinator(rd_kafka_mock_cluster_t *mcluster,const char
         SUB_TEST_PASS();
 }
 
+/** Produce-FastLeaderQuery Test
+ * We fail the request with RD_KAFKA_RESP_ERR_NOT_LEADER_OR_FOLLOWER so that it triggers FastLeaderQuery request
+ * which is backed off exponentially
+*/
 void test_Produce_FastleaderQuery(rd_kafka_mock_cluster_t *mcluster,const char *topic, rd_kafka_conf_t *conf){
         rd_kafka_mock_request_t **requests = NULL;
         size_t request_cnt = 0;
@@ -307,9 +323,12 @@ void test_Produce_FastleaderQuery(rd_kafka_mock_cluster_t *mcluster,const char *
                                 int64_t time_difference = (rd_kafka_mock_request_timestamp(requests[i]) - previous_request_ts)/1000;
                                 int64_t low = ((1<<retry_count)*(retry_ms)*75)/100; 
                                 int64_t high = ((1<<retry_count)*(retry_ms)*125)/100;
+                                if (high > ((retry_max_ms*125)/100))
+                                        high = (retry_max_ms*125)/100;
+                                if (low > ((retry_max_ms*75)/100))
+                                        low = (retry_max_ms*75)/100;
                                 TEST_ASSERT((time_difference < high) && (time_difference > low),"Time difference is not respected!\n");
                                 retry_count++;
-                                break;
                         }
                         previous_request_ts = rd_kafka_mock_request_timestamp(requests[i]);
                 }
@@ -320,6 +339,9 @@ void test_Produce_FastleaderQuery(rd_kafka_mock_cluster_t *mcluster,const char *
         SUB_TEST_PASS();
 }
 
+/** Fetch-FastLeaderQuery Test
+ * We fail the request with leader change or epoch to be precise so that it triggers FastLeaderQuery request.
+*/
 void test_Fetch_FastLeaderQuery(rd_kafka_mock_cluster_t *mcluster,const char *topic, rd_kafka_conf_t *conf){
         rd_kafka_mock_request_t **requests = NULL;
         size_t request_cnt = 0;
@@ -352,7 +374,9 @@ void test_Fetch_FastLeaderQuery(rd_kafka_mock_cluster_t *mcluster,const char *to
                 else if(rd_kafka_mock_request_api_key(requests[i]) == RD_KAFKAP_Metadata && fetched){
                         flag = rd_true;
                         break;
-                } 
+                }else{
+                        fetched = rd_false;
+                }
         }
         rd_kafka_destroy(consumer); 
         rd_kafka_mock_clear_requests(mcluster);
@@ -360,6 +384,10 @@ void test_Fetch_FastLeaderQuery(rd_kafka_mock_cluster_t *mcluster,const char *to
         SUB_TEST_PASS();
 }
 
+/** Exponential Backoff (KIP 580)
+ * We test all the pipelines which affect the retry mechanism for both intervalled queries where jitter is added and backed off
+ * queries where both jitter and exponential backoff is applied with the max being retry_max_ms.
+*/
 int main_0143_exponential_backoff(int argc, char **argv) {
         const char *topic = test_mk_topic_name("topic", 1);
         rd_kafka_mock_cluster_t *mcluster;

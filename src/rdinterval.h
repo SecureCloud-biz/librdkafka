@@ -111,7 +111,7 @@ static RD_INLINE RD_UNUSED void rd_interval_reset_to_now(rd_interval_t *ri,
 }
 
 /**
- * Reset the interval to 'now' with the given maxjitterpercentage. If now is 0, the time will be gathered
+ * Reset the interval to 'now' with the given backoff ms and maxjitterpercentage. If now is 0, the time will be gathered
  * automatically.
  */
 static RD_INLINE RD_UNUSED void rd_interval_reset_to_now_with_backoff_and_jitter(rd_interval_t *ri,
