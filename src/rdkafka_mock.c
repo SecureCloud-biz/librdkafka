@@ -1092,7 +1092,6 @@ static int
 rd_kafka_mock_connection_parse_request(rd_kafka_mock_connection_t *mconn,
                                        rd_kafka_buf_t *rkbuf) {
         rd_kafka_mock_cluster_t *mcluster = mconn->broker->cluster;
-        rd_kafka_mock_broker_t *broker = mconn->broker;
         rd_kafka_t *rk                    = mcluster->rk;
 
         if (rkbuf->rkbuf_reqhdr.ApiKey < 0 ||

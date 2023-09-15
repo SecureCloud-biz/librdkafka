@@ -1,7 +1,7 @@
 /*
  * librdkafka - Apache Kafka C library
  *
- * Copyright (c) 2023-2024, Magnus Edenhill
+ * Copyright (c) 2023-2024, Confluent
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -49,6 +49,7 @@ void test_FindCoordinator(rd_kafka_mock_cluster_t *mcluster, const char *topic, 
         rd_kafka_t *consumer, *producer;
         rd_kafka_topic_t *rkt;
 
+        SUB_TEST();
         test_conf_set(conf, "topic.metadata.refresh.interval.ms","-1");
         rd_kafka_conf_set_dr_msg_cb(conf, test_dr_msg_cb);
 
@@ -86,7 +87,7 @@ void test_FindCoordinator(rd_kafka_mock_cluster_t *mcluster, const char *topic, 
         rd_kafka_topic_destroy(rkt);
         rd_kafka_destroy(producer);
         rd_kafka_mock_clear_requests(mcluster);
-        TEST_SAY("FindCoordinator Finished Successfully!\n");
+        SUB_TEST_PASS();
 }
 
 void test_OffsetCommit(rd_kafka_mock_cluster_t *mcluster,const char *topic, rd_kafka_conf_t *conf){
@@ -96,6 +97,7 @@ void test_OffsetCommit(rd_kafka_mock_cluster_t *mcluster,const char *topic, rd_k
         int32_t retry_count = 0;
         rd_kafka_t *consumer;
 
+        SUB_TEST();
         test_conf_set(conf, "topic.metadata.refresh.interval.ms","-1");
         test_conf_set(conf, "debug" ,"generic,cgrp");
         test_conf_set(conf, "auto.offset.reset", "earliest");
@@ -137,7 +139,7 @@ void test_OffsetCommit(rd_kafka_mock_cluster_t *mcluster,const char *topic, rd_k
         }
         rd_kafka_destroy(consumer);
         rd_kafka_mock_clear_requests(mcluster);
-        TEST_SAY("OffsetCommit Finished Successfully!\n");
+        SUB_TEST_PASS();
 }
 
 void test_Produce(rd_kafka_mock_cluster_t *mcluster,const char *topic, rd_kafka_conf_t *conf){
@@ -147,7 +149,7 @@ void test_Produce(rd_kafka_mock_cluster_t *mcluster,const char *topic, rd_kafka_
         int32_t retry_count = 0;
         rd_kafka_t *producer;
         rd_kafka_topic_t *rkt;
-
+        SUB_TEST();
         test_conf_set(conf, "topic.metadata.refresh.interval.ms","-1");
         rd_kafka_conf_set_dr_msg_cb(conf, test_dr_msg_cb);
 
@@ -187,7 +189,7 @@ void test_Produce(rd_kafka_mock_cluster_t *mcluster,const char *topic, rd_kafka_
         rd_kafka_topic_destroy(rkt);
         rd_kafka_destroy(producer);
         rd_kafka_mock_clear_requests(mcluster);
-        TEST_SAY("Produce Finished Successfully!\n");
+        SUB_TEST_PASS();
 }
 
 void test_Heartbeat_FindCoordinator(rd_kafka_mock_cluster_t *mcluster,const char *topic, rd_kafka_conf_t *conf){
@@ -195,7 +197,7 @@ void test_Heartbeat_FindCoordinator(rd_kafka_mock_cluster_t *mcluster,const char
         size_t request_cnt = 0;
         int32_t num_heartbeat = 0;
         rd_kafka_t *consumer;
-
+        SUB_TEST();
         test_conf_set(conf, "topic.metadata.refresh.interval.ms","-1");
         test_conf_set(conf, "auto.offset.reset", "earliest");
         test_conf_set(conf, "enable.auto.commit", "false");
@@ -231,7 +233,7 @@ void test_Heartbeat_FindCoordinator(rd_kafka_mock_cluster_t *mcluster,const char
         TEST_ASSERT((num_heartbeat == 1),"No Heartbeat Request was made.\n");
         rd_kafka_destroy(consumer);
         rd_kafka_mock_clear_requests(mcluster);
-        TEST_SAY("Heartbeat-FindCoordinator Finished Successfully!\n");
+        SUB_TEST_PASS();
 }
 
 void test_JoinGroup_FindCoordinator(rd_kafka_mock_cluster_t *mcluster,const char *topic, rd_kafka_conf_t *conf){
@@ -239,7 +241,7 @@ void test_JoinGroup_FindCoordinator(rd_kafka_mock_cluster_t *mcluster,const char
         size_t request_cnt = 0;
         int32_t num_joingroup = 0;
         rd_kafka_t *consumer;
-
+        SUB_TEST();
         test_conf_set(conf, "topic.metadata.refresh.interval.ms","-1");
         test_conf_set(conf, "auto.offset.reset", "earliest");
         test_conf_set(conf, "enable.auto.commit", "false");
@@ -273,7 +275,7 @@ void test_JoinGroup_FindCoordinator(rd_kafka_mock_cluster_t *mcluster,const char
         TEST_ASSERT((num_joingroup == 1),"No JoinGroup Request was made.\n");
         rd_kafka_destroy(consumer);
         rd_kafka_mock_clear_requests(mcluster);
-        TEST_SAY("JoinGroup-FindCoordinator Finished Successfully!\n");
+        SUB_TEST_PASS();
 }
 
 void test_Produce_FastleaderQuery(rd_kafka_mock_cluster_t *mcluster,const char *topic, rd_kafka_conf_t *conf){
@@ -282,7 +284,7 @@ void test_Produce_FastleaderQuery(rd_kafka_mock_cluster_t *mcluster,const char *
         int64_t previous_request_ts = -1;
         int32_t retry_count = 0;
         rd_bool_t produced = rd_false;
-
+        SUB_TEST();
         test_conf_set(conf, "topic.metadata.refresh.interval.ms","-1");
         rd_kafka_conf_set_dr_msg_cb(conf, test_dr_msg_cb);
 
@@ -315,7 +317,7 @@ void test_Produce_FastleaderQuery(rd_kafka_mock_cluster_t *mcluster,const char *
         rd_kafka_topic_destroy(rkt);
         rd_kafka_destroy(producer); 
         rd_kafka_mock_clear_requests(mcluster);
-        TEST_SAY("Produce-FastLeaderQuery Finished Successfully!\n");
+        SUB_TEST_PASS();
 }
 
 void test_Fetch_FastLeaderQuery(rd_kafka_mock_cluster_t *mcluster,const char *topic, rd_kafka_conf_t *conf){
@@ -324,7 +326,7 @@ void test_Fetch_FastLeaderQuery(rd_kafka_mock_cluster_t *mcluster,const char *to
         rd_bool_t fetched = rd_false;
         rd_bool_t flag = rd_false;
         rd_kafka_t *consumer;
-
+        SUB_TEST();
         test_conf_set(conf, "topic.metadata.refresh.interval.ms","-1");
         test_conf_set(conf, "auto.offset.reset", "earliest");
         test_conf_set(conf, "enable.auto.commit", "false");
@@ -355,7 +357,7 @@ void test_Fetch_FastLeaderQuery(rd_kafka_mock_cluster_t *mcluster,const char *to
         rd_kafka_destroy(consumer); 
         rd_kafka_mock_clear_requests(mcluster);
         TEST_ASSERT((flag==rd_true),"Metadata Request should have been made after fetch atleast once.\n");
-        TEST_SAY("Fetch-FastLeaderQuery Finished Successfully!\n");
+        SUB_TEST_PASS();
 }
 
 int main_0143_exponential_backoff(int argc, char **argv) {
@@ -383,7 +385,6 @@ int main_0143_exponential_backoff(int argc, char **argv) {
         test_JoinGroup_FindCoordinator(mcluster,topic,rd_kafka_conf_dup(conf));
         test_Fetch_FastLeaderQuery(mcluster,topic,rd_kafka_conf_dup(conf));
 
-        TEST_SAY("All Tests Passed!\n");
         test_mock_cluster_destroy(mcluster);
         return 0;
 }
