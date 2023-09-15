@@ -369,10 +369,10 @@ int main_0009_mock_cluster(int argc, char **argv) {
         test_Produce(mcluster,topic,rd_kafka_conf_dup(conf));
         test_Produce_FastleaderQuery(mcluster,topic,rd_kafka_conf_dup(conf)); // Needs Consumer to be destroyed 
         test_FindCoordinator(mcluster,topic,rd_kafka_conf_dup(conf));
-        // test_OffsetCommit(mcluster,topic,rd_kafka_conf_dup(conf)); // blocks on consumer destroy
-        // test_Heartbeat_FindCoordinator(mcluster,topic,rd_kafka_conf_dup(conf)); // blocks on consumer destroy
-        // test_JoinGroup_FindCoordinator(mcluster,topic,rd_kafka_conf_dup(conf)); // blocks on consumer destroy
-        // test_Fetch_FastLeaderQuery(mcluster,topic,rd_kafka_conf_dup(conf)); // blocks on consumer destroy
+        test_OffsetCommit(mcluster,topic,rd_kafka_conf_dup(conf)); // blocks on consumer destroy
+        test_Heartbeat_FindCoordinator(mcluster,topic,rd_kafka_conf_dup(conf)); // blocks on consumer destroy
+        test_JoinGroup_FindCoordinator(mcluster,topic,rd_kafka_conf_dup(conf)); // blocks on consumer destroy
+        test_Fetch_FastLeaderQuery(mcluster,topic,rd_kafka_conf_dup(conf)); // blocks on consumer destroy
 
         TEST_SAY("All Tests Passed!\n");
         test_mock_cluster_destroy(mcluster);
