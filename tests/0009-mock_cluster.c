@@ -66,7 +66,9 @@ void test_FindCoordinator(rd_kafka_mock_cluster_t *mcluster, const char *topic, 
                                           RD_KAFKA_RESP_ERR_GROUP_COORDINATOR_NOT_AVAILABLE,
                                           RD_KAFKA_RESP_ERR_GROUP_COORDINATOR_NOT_AVAILABLE);
         
-        rd_kafka_consumer_poll(consumer,10*1000);
+        rd_kafka_message_t *rkm = rd_kafka_consumer_poll(consumer,10*1000);
+        if (rkm)
+                rd_kafka_message_destroy(rkm);
         rd_sleep(4);
         requests = rd_kafka_mock_get_requests(mcluster,&request_cnt);
         for(int i = 0; (i < request_cnt) && (retry_count < num_retries); i++){
@@ -101,7 +103,9 @@ void test_OffsetCommit(rd_kafka_mock_cluster_t *mcluster,const char *topic, rd_k
 
         consumer = test_create_consumer(topic, NULL, rd_kafka_conf_dup(conf), NULL);
         test_consumer_subscribe(consumer,topic);
-        rd_kafka_consumer_poll(consumer,10*1000);
+        rd_kafka_message_t *rkm = rd_kafka_consumer_poll(consumer,10*1000);
+        if (rkm)
+                rd_kafka_message_destroy(rkm);
         rd_sleep(4);
         rd_kafka_mock_push_request_errors(mcluster, RD_KAFKAP_OffsetCommit, 2,
                                             RD_KAFKA_RESP_ERR_COORDINATOR_LOAD_IN_PROGRESS,
@@ -205,7 +209,9 @@ void test_Heartbeat_FindCoordinator(rd_kafka_mock_cluster_t *mcluster,const char
 
         rd_kafka_mock_clear_requests(mcluster);
         test_consumer_subscribe(consumer,topic);
-        rd_kafka_consumer_poll(consumer,10*1000);
+        rd_kafka_message_t *rkm = rd_kafka_consumer_poll(consumer,10*1000);
+        if (rkm)
+                rd_kafka_message_destroy(rkm);
         rd_sleep(6);
         requests = rd_kafka_mock_get_requests(mcluster,&request_cnt);
         for(int i = 0; i < request_cnt; i++){
@@ -247,7 +253,9 @@ void test_JoinGroup_FindCoordinator(rd_kafka_mock_cluster_t *mcluster,const char
                                             RD_KAFKA_RESP_ERR_NOT_COORDINATOR_FOR_GROUP);
         rd_kafka_mock_clear_requests(mcluster);
         test_consumer_subscribe(consumer,topic);
-        rd_kafka_consumer_poll(consumer,10*1000);
+        rd_kafka_message_t *rkm = rd_kafka_consumer_poll(consumer,10*1000);
+        if (rkm)
+                rd_kafka_message_destroy(rkm);
         rd_sleep(4);
         requests = rd_kafka_mock_get_requests(mcluster,&request_cnt);
         for(int i = 0; i < request_cnt; i++){
@@ -329,11 +337,15 @@ void test_Fetch_FastLeaderQuery(rd_kafka_mock_cluster_t *mcluster,const char *to
         consumer = test_create_consumer(topic, NULL, rd_kafka_conf_dup(conf), NULL);
         
         test_consumer_subscribe(consumer,topic);
-        rd_kafka_consumer_poll(consumer,10*1000);
+        rd_kafka_message_t *rkm = rd_kafka_consumer_poll(consumer,10*1000);
+        if (rkm)
+                rd_kafka_message_destroy(rkm);
         rd_kafka_mock_clear_requests(mcluster);
         
         rd_kafka_mock_partition_set_leader(mcluster,topic,0,1);
-        rd_kafka_consumer_poll(consumer,10*1000);
+        rkm = rd_kafka_consumer_poll(consumer,10*1000);
+        if (rkm)
+                rd_kafka_message_destroy(rkm);
         rd_sleep(3);
         requests = rd_kafka_mock_get_requests(mcluster,&request_cnt);
         for(int i = 0; i < request_cnt; i++){
@@ -367,12 +379,12 @@ int main_0009_mock_cluster(int argc, char **argv) {
         test_conf_set(conf, "bootstrap.servers", bootstraps);
         
         test_Produce(mcluster,topic,rd_kafka_conf_dup(conf));
-        test_Produce_FastleaderQuery(mcluster,topic,rd_kafka_conf_dup(conf)); // Needs Consumer to be destroyed 
+        test_Produce_FastleaderQuery(mcluster,topic,rd_kafka_conf_dup(conf)); 
         test_FindCoordinator(mcluster,topic,rd_kafka_conf_dup(conf));
-        test_OffsetCommit(mcluster,topic,rd_kafka_conf_dup(conf)); // blocks on consumer destroy
-        test_Heartbeat_FindCoordinator(mcluster,topic,rd_kafka_conf_dup(conf)); // blocks on consumer destroy
-        test_JoinGroup_FindCoordinator(mcluster,topic,rd_kafka_conf_dup(conf)); // blocks on consumer destroy
-        test_Fetch_FastLeaderQuery(mcluster,topic,rd_kafka_conf_dup(conf)); // blocks on consumer destroy
+        test_OffsetCommit(mcluster,topic,rd_kafka_conf_dup(conf));
+        test_Heartbeat_FindCoordinator(mcluster,topic,rd_kafka_conf_dup(conf));
+        test_JoinGroup_FindCoordinator(mcluster,topic,rd_kafka_conf_dup(conf));
+        test_Fetch_FastLeaderQuery(mcluster,topic,rd_kafka_conf_dup(conf));
 
         TEST_SAY("All Tests Passed!\n");
         test_mock_cluster_destroy(mcluster);
