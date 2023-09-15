@@ -302,7 +302,7 @@ void test_Produce_FastleaderQuery(rd_kafka_mock_cluster_t *mcluster,const char *
         
         for(int i = 0; i < request_cnt; i++){
                 TEST_SAY("Broker Id : %d API Key : %d Timestamp : %ld\n",rd_kafka_mock_request_id(requests[i]), rd_kafka_mock_request_api_key(requests[i]), rd_kafka_mock_request_timestamp(requests[i]));
-                if(!produced && rd_kafka_mock_request_api_key(requests[i])==RD_KAFKAP_Produce)
+                if(!produced && rd_kafka_mock_request_api_key(requests[i]) == RD_KAFKAP_Produce)
                         produced = rd_true;
                 if(rd_kafka_mock_request_api_key(requests[i]) == RD_KAFKAP_Metadata && produced){
                         if(previous_request_ts != -1){
@@ -328,6 +328,7 @@ void test_Fetch_FastLeaderQuery(rd_kafka_mock_cluster_t *mcluster,const char *to
         int64_t previous_request_ts = -1;
         int32_t retry_count = 0;
         rd_bool_t fetched = rd_false;
+        rd_bool_t flag = rd_false;
         rd_kafka_t *consumer;
 
         test_conf_set(conf, "topic.metadata.refresh.interval.ms","-1");
@@ -353,11 +354,13 @@ void test_Fetch_FastLeaderQuery(rd_kafka_mock_cluster_t *mcluster,const char *to
                 if(rd_kafka_mock_request_api_key(requests[i]) == RD_KAFKAP_Fetch)
                         fetched = rd_true;
                 else if(rd_kafka_mock_request_api_key(requests[i]) == RD_KAFKAP_Metadata && fetched){
+                        flag = rd_true;
                         break;
                 } 
         }
         rd_kafka_destroy(consumer); 
         rd_kafka_mock_clear_requests(mcluster);
+        TEST_ASSERT((flag==rd_true),"Metadata Request should have been made after fetch atleast once.\n");
         TEST_SAY("Fetch-FastLeaderQuery Finished Successfully!\n");
 }
 
@@ -389,5 +392,4 @@ int main_0009_mock_cluster(int argc, char **argv) {
         TEST_SAY("All Tests Passed!\n");
         test_mock_cluster_destroy(mcluster);
         return 0;
-
 }
